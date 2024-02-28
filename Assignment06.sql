@@ -5,6 +5,7 @@
 -- Change Log: When,Who,What
 -- 2017-01-01,YourNameHere,Created File
 -- 2024-02-21,JPeterson,Modified File
+-- 2024-02-27,JPeterson,Modified File
 --**************************************************************************--
 Begin Try
 	Use Master;
@@ -235,7 +236,63 @@ FROM
 GO
 
 -Final code includes Schema Binding. 
+
+
+CREATE VIEW
+	vCategories
+WITH SCHEMABINDING 
+AS SELECT
+	CategoryID
+	,CategoryName
+FROM
+	dbo.Categories
+	;
+GO
+
+CREATE VIEW
+	vEmployees
+WITH SCHEMABINDING 
+AS SELECT
+	EmployeeID
+	,EmployeeFirstName
+	,EmployeeLastName
+	,ManagerID
+FROM
+	dbo.Employees
+;
+GO
+
+CREATE VIEW
+	vInventories
+WITH SCHEMABINDING 
+AS SELECT
+	InventoryID
+	,InventoryDate
+	,EmployeeID
+	,ProductID
+	,Count
+FROM
+	dbo.Inventories
+;
+GO
+
+CREATE VIEW
+	vProducts
+WITH SCHEMABINDING 
+AS SELECT
+	ProductID
+	,ProductName
+	,CategoryID
+	,UnitPrice
+FROM
+	dbo.Products
+;
+GO
 */
+USE
+	Assignment06DB_JPeterson
+	;
+GO
 
 CREATE VIEW
 	vCategories
@@ -288,6 +345,22 @@ FROM
 ;
 GO
 
+Select * 
+	From 
+	vCategories;
+go
+Select * 
+	From 
+	vProducts;
+go
+Select * 
+	From 
+	vEmployees;
+go
+Select * 
+	From 
+	vInventories;
+go
 -- Question 2 (5% pts): How can you set permissions, so that the public group CANNOT select data 
 -- from each table, but can select data from each view?
 /*
@@ -382,7 +455,7 @@ FROM
 GO
 
 -Final code includes protection permissions, deny database tables and grant public views.
-*/
+
 USE
 	Assignment06DB_JPeterson
 	;
@@ -455,6 +528,80 @@ FROM
 	vPublicProducts
 	;
 GO
+*/
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+DENY SELECT ON
+	Categories
+	TO PUBLIC
+	;
+GRANT SELECT ON
+	vPublicCategories
+	TO PUBLIC
+	;
+GO
+
+DENY SELECT ON
+	Employees
+	TO PUBLIC
+	;
+GRANT SELECT ON
+	vPublicEmployees
+	TO PUBLIC
+	;
+GO
+
+DENY SELECT ON
+	Inventories
+	TO PUBLIC
+	;
+GRANT SELECT ON
+	vPublicInventories
+	TO PUBLIC
+	;
+GO
+
+DENY SELECT ON
+	Products
+	TO PUBLIC
+	;
+GRANT SELECT ON
+	vPublicProducts
+	TO PUBLIC
+	;
+GO
+
+SELECT
+	*
+	FROM
+	vPublicCategories
+	;
+GO
+
+SELECT
+	*
+	FROM
+	vPublicEmployees
+	;
+GO
+
+SELECT
+	*
+	FROM
+	vPublicInventories
+	;
+GO
+
+SELECT
+	*
+	FROM
+	vPublicProducts
+	;
+GO
 
 -- Question 3 (10% pts): How can you create a view to show a list of Category and Product names, 
 -- and the price of each product?
@@ -494,7 +641,7 @@ FROM
 	;
 
 -Final code is ordered by the Category name and Product name
-*/
+
 
 CREATE VIEW
 	vCate_Prod 
@@ -519,7 +666,36 @@ FROM
 	vCate_Prod 
 	;
 GO
+*/
 
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vProductsByCategories
+AS SELECT 
+	TOP 100
+	CategoryName
+	,ProductName
+	,UnitPrice
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+ORDER BY
+	CategoryName
+	,ProductName
+	;
+	
+
+SELECT
+	*
+	FROM
+	vProductsByCategories
+	;
+GO
 
 -- Question 4 (10% pts): How can you create a view to show a list of Product names 
 -- and Inventory Counts on each Inventory Date?
@@ -559,7 +735,7 @@ FROM
 	;
 
 -Final code is ordered by the Product name, Inventory date, and Count
-*/
+
 
 CREATE VIEW
 	vProduct_Inventory
@@ -582,6 +758,35 @@ SELECT
 	*
 FROM
 	vProduct_Inventory
+	;
+GO
+*/
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesByProductsByDates
+AS SELECT
+	TOP 100
+	ProductName
+	,InventoryDate
+	,Count
+FROM
+	vProducts AS [P]
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+ORDER BY
+	ProductName
+	,InventoryDate
+	,Count
+	;
+
+SELECT *
+	FROM
+	vInventoriesByProductsByDates
 	;
 GO
 
@@ -642,7 +847,7 @@ ORDER BY
 	InventoryDate
 	;
 
-*/
+
 
 CREATE VIEW
 	vInvento_Employ
@@ -667,14 +872,126 @@ FROM
 	vInvento_Employ
 	;
 GO
+*/
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesByEmployeesByDates
+AS SELECT
+	TOP 100
+	InventoryDate
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vInventories AS [I]
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+GROUP BY
+	InventoryDate
+	,EmployeeFirstName + ' ' + EmployeeLastName
+ORDER BY
+	InventoryDate
+	;
+
+SELECT
+	*
+	FROM
+	vInventoriesByEmployeesByDates
+	;
+GO	
 
 -- Question 6 (10% pts): How can you create a view show a list of Categories, Products, 
 -- and the Inventory Date and Count of each product?
 -- Order the results by the Category, Product, Date, and Count!
 
 /*
+-View Categories, Products, and Inventories tables.
+Select * 
+	From 
+	vCategories;
+go
 
+Select * 
+	From 
+	vProducts;
+go
+
+Select * 
+	From 
+	vInventories;
+go
+
+
+-Create a view with category name, product name, inventory date and inventory count.
+CREATE VIEW
+	vCategory_Product_Inventory
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+FROM
+	vCategories AS [C]
+	,vProducts AS [P]
+	,vInventories AS [I]
+	;
+
+-Join categories and products table together, then join the inventories table together.
+ALTER VIEW
+	vCategory_Product_Inventory
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	;
+
+SELECT *
+	FROM
+	vCategory_Product_Inventory
+	;
+
+-Final code is ordered by the Category, Product, Date, and Count.
 */
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesByProductsByCategories
+AS SELECT
+	TOP 100
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+ORDER BY
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	;
+
+SELECT *
+	FROM
+	vInventoriesByProductsByCategories
+	;
 
 
 -- Question 7 (10% pts): How can you create a view to show a list of Categories, Products, 
@@ -682,31 +999,422 @@ GO
 -- Order the results by the Inventory Date, Category, Product and Employee!
 
 /*
+-View Categories, Products, Inventories and Employees tables.
+Select * 
+	From 
+	vCategories;
+go
 
+Select * 
+	From 
+	vProducts;
+go
+
+Select * 
+	From 
+	vInventories;
+go
+
+Select * 
+	From 
+	vEmployees;
+go
+
+-Create a view with category name, product name, inventory date, inventory count and employee name.
+CREATE VIEW
+	vCategory_Product_Inventory_Employee
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	,vProducts AS [P]
+	,vInventories AS [I]
+	,vEmployees AS [E]
+	;
+
+Select * 
+	From 
+	vCategory_Product_Inventory_Employee
+go
+
+-Join categories and products table together, then join inventories table together, lastly join the employees table together.
+ALTER VIEW
+	vCategory_Product_Inventory_Employee
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+	;
+
+Select * 
+	From 
+	vCategory_Product_Inventory_Employee
+go	
+
+-Final code is ordered by Inventory Date, Category, Product and Employee.
 */
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesByProductsByEmployees
+AS SELECT
+	TOP 100
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+ORDER BY
+	InventoryDate
+	,CategoryName
+	,ProductName
+	,[EmployeeName]
+	;
+
+Select * 
+	From 
+	vInventoriesByProductsByEmployees
+go	
 
 -- Question 8 (10% pts): How can you create a view to show a list of Categories, Products, 
 -- the Inventory Date and Count of each product, and the Employee who took the count
 -- for the Products 'Chai' and 'Chang'? 
 
 /*
+-View Categories, Products, Inventories and Employees tables.
+Select * 
+	From 
+	vCategories;
+go
 
+Select * 
+	From 
+	vProducts;
+go
+
+Select * 
+	From 
+	vInventories;
+go
+
+Select * 
+	From 
+	vEmployees;
+go
+
+-Create a view with category name, product name, inventory date, inventory count and employee name.
+CREATE VIEW
+	vCategory_Product_Inventory_Employee_Chai_Chang
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	,vProducts AS [P]
+	,vInventories AS [I]
+	,vEmployees AS [E]
+	;
+
+Select * 
+	From 
+	vCategory_Product_Inventory_Employee_Chai_Chang
+go
+
+-Join categories and products table together, then join inventories table together, lastly join the employees table together.
+ALTER VIEW
+	vCategory_Product_Inventory_Employee_Chai_Chang
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+	;
+
+Select * 
+	From 
+	vCategory_Product_Inventory_Employee_Chai_Chang
+go	
+
+
+-Final code filters results by 'Chai' and 'Chang'
 */
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesForChaiAndChangByEmployees
+AS SELECT
+	CategoryName
+	,ProductName
+	,InventoryDate
+	,Count
+	,[EmployeeName] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+WHERE
+	ProductName 
+	IN ('Chai','Chang')
+	;
+
+Select * 
+	From 
+	vInventoriesForChaiAndChangByEmployees
+go	
 
 -- Question 9 (10% pts): How can you create a view to show a list of Employees and the Manager who manages them?
 -- Order the results by the Manager's name!
 
 /*
+-View the Employees table.
+Select * 
+	From 
+	vEmployees
+	;
+go
 
+-Create a view with manager name and employee name.
+CREATE VIEW
+	vEmployeesByManager
+AS SELECT
+	[Manager] = EmployeeFirstName + ' ' + EmployeeLastName
+	,[Employee] = EmployeeFirstName + ' ' + EmployeeLastName
+FROM
+	vEmployees AS [E]
+	;
+
+Select * 
+	From 
+	vEmployeesByManager
+	;
+go
+
+-Self join the employee table to itself, connecting the employee ID with the manager ID.
+ALTER VIEW
+	vEmployeesByManager
+AS SELECT
+	[Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName
+	,[Employee] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+FROM
+	vEmployees AS [M]
+	JOIN vEmployees AS [E]
+	ON E.ManagerID = M.EmployeeID
+	;
+
+Select * 
+	From 
+	vEmployeesByManager
+	;
+go
+
+-Final code is ordered by Manager's name.
 */
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vEmployeesByManager
+AS SELECT
+ TOP 100
+	[Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName
+	,[Employee] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+FROM
+	vEmployees AS [M]
+	JOIN vEmployees AS [E]
+	ON E.ManagerID = M.EmployeeID
+ORDER BY
+	[Manager]
+	;
+
+Select * 
+	From 
+	vEmployeesByManager
+	;
+go
 
 -- Question 10 (20% pts): How can you create one view to show all the data from all four 
 -- BASIC Views? Also show the Employee's Manager Name and order the data by 
 -- Category, Product, InventoryID, and Employee.
 
 /*
+-View Categories, Products, Inventories and Employees tables.
+Select * 
+	From 
+	vCategories;
+go
+
+Select * 
+	From 
+	vProducts;
+go
+
+Select * 
+	From 
+	vInventories;
+go
+
+Select * 
+	From 
+	vEmployees;
+go
+
+
+-Create a view with category name, product name, inventory date, inventory count and employee name.
+CREATE VIEW
+	vInventoriesByProductsByCategoriesByEmployees
+AS SELECT
+	C.CategoryID
+	,C.CategoryName
+	,P.ProductID
+	,P.ProductName
+	,P.UnitPrice
+	,I.InventoryID
+	,I.InventoryDate
+	,I.Count
+	,E.EmployeeID
+	,[Employee] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+	,[Manager] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+FROM
+	vCategories AS [C]
+	,vProducts AS [P]
+	,vInventories AS [I]
+	,vEmployees AS [E]
+	;
+
+Select * 
+	From 
+	vInventoriesByProductsByCategoriesByEmployees
+go
+
+-Join categories and products table together, then join inventories table together, lastly join the employees table together.
+ALTER VIEW
+	vInventoriesByProductsByCategoriesByEmployees
+AS SELECT
+	C.CategoryID
+	,C.CategoryName
+	,P.ProductID
+	,P.ProductName
+	,P.UnitPrice
+	,I.InventoryID
+	,I.InventoryDate
+	,I.Count
+	,E.EmployeeID
+	,[Employee] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+	,[Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+	JOIN vEmployees AS [M]
+	ON E.ManagerID = M.EmployeeID
+	;
+
+Select * 
+	From 
+	vInventoriesByProductsByCategoriesByEmployees
+go	
+
+
+-Final code ordered by Category name, Product name, InventoryID, and Employee.
+
 
 */
+
+USE
+	Assignment06DB_JPeterson
+	;
+GO
+
+CREATE VIEW
+	vInventoriesByProductsByCategoriesByEmployees
+AS SELECT
+	TOP 100
+	C.CategoryID
+	,C.CategoryName
+	,P.ProductID
+	,P.ProductName
+	,P.UnitPrice
+	,I.InventoryID
+	,I.InventoryDate
+	,I.Count
+	,E.EmployeeID
+	,[Employee] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+	,[Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName
+FROM
+	vCategories AS [C]
+	JOIN vProducts AS [P]
+	ON C.CategoryID = P.CategoryID
+	JOIN vInventories AS [I]
+	ON P.ProductID = I.ProductID
+	JOIN vEmployees AS [E]
+	ON I.EmployeeID = E.EmployeeID
+	JOIN vEmployees AS [M]
+	ON E.ManagerID = M.EmployeeID
+ORDER BY
+	CategoryName
+	,ProductName
+	,InventoryID
+	,[Employee]
+	;
+
+Select * 
+	From 
+	vInventoriesByProductsByCategoriesByEmployees
+go	
+
 
 -- Test your Views (NOTE: You must change the your view names to match what I have below!)
 Print 'Note: You will get an error until the views are created!'
